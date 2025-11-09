@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeChain - AI Code Assistant</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+
+<style>
+    :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-sidebar: #f1f3f4;
+    --bg-input: #ffffff;
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+    --border: #dadce0;
+    --accent: #1a73e8;
+    --accent-hover: #1557b0;
+    --accent-glow: rgba(26, 115, 232, 0.3);
+    --shadow-premium: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --shadow-glow: 0 0 20px rgba(26, 115, 232, 0.2);
+}
+
+[data-theme="dark"] {
+    --bg-primary: #343541;
+    --bg-secondary: #444654;
+    --bg-sidebar: #202123;
+    --bg-input: #40414f;
+    --text-primary: #ececf1;
+    --text-secondary: #8e8ea0;
+    --border: #565869;
+    --accent: #10a37f;
+    --accent-hover: #0d8f6e;
+    --accent-glow: rgba(16, 163, 127, 0.3);
+    --shadow-premium: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 20px rgba(16, 163, 127, 0.2);
+}
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-premium);
+    }
+
+    .theme-toggle:hover {
+        transform: scale(1.1);
+        box-shadow: var(--shadow-glow);
+    }
+
+    .theme-toggle svg {
+        width: 24px;
+        height: 24px;
+        fill: var(--text-primary);
+        transition: transform 0.3s ease;
+    }
+
+    .theme-toggle:hover svg {
+        transform: rotate(180deg);
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #343541 0%, #2d2f3a 100%);
+        color: var(--text-primary);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        -webkit-font-smoothing: antialiased;
+        position: relative;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(16, 163, 127, 0.03) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(84, 54, 218, 0.03) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: linear-gradient(180deg, #202123 0%, #1a1b1e 100%);
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
+        position: relative;
+        z-index: 10;
+    }
+
+    .sidebar-header {
+        padding: 12px;
+    }
+
+    .new-chat-btn {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, rgba(16, 163, 127, 0.1) 0%, rgba(16, 163, 127, 0.05) 100%);
+        border: 1px solid rgba(16, 163, 127, 0.2);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .new-chat-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s;
+    }
+
+    .new-chat-btn:hover {
+        background: linear-gradient(135deg, rgba(16, 163, 127, 0.2) 0%, rgba(16, 163, 127, 0.1) 100%);
+        border-color: rgba(16, 163, 127, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 163, 127, 0.2);
+    }
+
+    .new-chat-btn:hover::before {
+        left: 100%;
+    }
+
+    .new-chat-btn:active {
+        transform: translateY(0);
+    }
+
+    .new-chat-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .conversations {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .conversation-item {
+        padding: 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .conversation-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%) scaleY(0);
+        width: 3px;
+        height: 0;
+        background: linear-gradient(180deg, var(--accent), var(--accent-hover));
+        border-radius: 0 3px 3px 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .conversation-item:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-primary);
+        transform: translateX(2px);
+        padding-left: 16px;
+    }
+
+    .conversation-item.active {
+        background: linear-gradient(90deg, rgba(16, 163, 127, 0.15) 0%, rgba(16, 163, 127, 0.05) 100%);
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .conversation-item.active::before {
+        transform: translateY(-50%) scaleY(1);
+        height: 60%;
+    }
+
+    .conversation-item svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-footer-btn {
+        width: 100%;
+        padding: 12px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .sidebar-footer-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+    }
+
+    .main-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+    }
+
+    .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        background: linear-gradient(180deg, var(--bg-primary) 0%, #2f3138 100%);
+    }
+
+    .message-group {
+        display: flex;
+        padding: 24px 0;
+        gap: 20px;
+        max-width: 768px;
+        margin: 0 auto;
+        width: 100%;
+        padding-left: 24px;
+        padding-right: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    @keyframes messageSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message-group.user {
+        background: var(--bg-primary);
+    }
+
+    .message-group.assistant {
+        background: linear-gradient(180deg, #444654 0%, #3d3f4a 100%);
+        position: relative;
+    }
+
+    .message-group.assistant::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(180deg, var(--accent), transparent);
+        opacity: 0.5;
+    }
+
+    .message-group.user .message-content {
+        color: var(--text-primary);
+    }
+
+    .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .avatar.user {
+        background: linear-gradient(135deg, #5436da 0%, #7c5fd9 100%);
+        color: white;
+    }
+
+    .avatar.assistant {
+        background: linear-gradient(135deg, var(--accent) 0%, #12b589 100%);
+        color: white;
+    }
+
+    .message-group:hover .avatar {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .message-content {
+        flex: 1;
+        min-width: 0;
+        line-height: 1.75;
+        font-size: 16px;
+        color: var(--text-primary);
+    }
+
+    .message-content p {
+        margin-bottom: 16px;
+    }
+
+    .message-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .message-content code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+        font-size: 14px;
+    }
+
+    .message-content pre {
+        background: #0a0a0a !important;
+        padding: 20px;
+        border-radius: 0 0 12px 12px;
+        overflow-x: auto;
+        margin: 0;
+        border: none !important;
+        position: relative;
+    }
+
+    .code-block-wrapper pre {
+        background: #000 !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-top: none !important;
+        border-radius: 0 0 8px 8px !important;
+    }
+
+    .message-content pre code {
+        background: none;
+        padding: 0;
+    }
+
+    .code-block-wrapper {
+        position: relative;
+        margin: 20px 0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        animation: codeBlockSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes codeBlockSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .code-block-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.3) 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+    }
+
+    .code-block-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .copy-code-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .copy-code-btn:hover {
+        background: linear-gradient(135deg, rgba(16, 163, 127, 0.2) 0%, rgba(16, 163, 127, 0.1) 100%);
+        border-color: rgba(16, 163, 127, 0.3);
+        color: var(--accent);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 163, 127, 0.2);
+    }
+
+    .mode-selector {
+        padding: 16px 24px;
+        background: linear-gradient(180deg, #343541 0%, #2f3138 100%);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        position: relative;
+        z-index: 4;
+    }
+
+    .mode-selector-wrapper {
+        max-width: 768px;
+        margin: 0 auto;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .mode-selector-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+
+    .mode-buttons {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+        flex-wrap: wrap;
+    }
+
+    .mode-btn {
+        flex: 1;
+        min-width: 100px;
+        padding: 12px 18px;
+        background: linear-gradient(180deg, var(--bg-input) 0%, #383a47 100%);
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mode-btn:hover {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+        border-color: var(--accent);
+        color: var(--text-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 163, 127, 0.2);
+    }
+
+    .mode-btn.active {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+        border-color: var(--accent);
+        color: white;
+        box-shadow: 0 4px 16px rgba(16, 163, 127, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .input-container {
+        padding: 24px;
+        background: linear-gradient(180deg, var(--bg-primary) 0%, #2f3138 100%);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        position: relative;
+        z-index: 5;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .input-wrapper {
+        max-width: 768px;
+        margin: 0 auto;
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+    }
+
+    .input-field {
+        flex: 1;
+        position: relative;
+    }
+
+    .input-field textarea {
+        width: 100%;
+        padding: 16px 60px 16px 24px;
+        background: var(--bg-input);
+        border: 2px solid var(--border);
+        border-radius: 30px;
+        color: var(--text-primary);
+        font-size: 16px;
+        font-family: inherit;
+        resize: none;
+        min-height: 60px;
+        max-height: 120px;
+        line-height: 1.5;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .input-field textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: linear-gradient(180deg, #464854 0%, #40414f 100%);
+        box-shadow: 0 4px 20px rgba(16, 163, 127, 0.2), 0 0 0 3px rgba(16, 163, 127, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .input-field textarea::placeholder {
+        color: var(--text-secondary);
+    }
+
+    .input-field textarea:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: rgba(64, 65, 79, 0.3);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .input-field textarea:disabled::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.7;
+    }
+
+    .send-button {
+        position: absolute;
+        right: 8px;
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px var(--accent-glow);
+    }
+
+    .send-button:hover:not(:disabled) {
+        background: linear-gradient(135deg, var(--accent-hover) 0%, #0fa575 100%);
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 6px 20px rgba(16, 163, 127, 0.4);
+    }
+
+    .send-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    .send-button svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .empty-state {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        text-align: center;
+        position: relative;
+        animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .empty-state h1 {
+        font-size: 42px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, #ececf1 0%, #b8b9c5 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        letter-spacing: -1px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .empty-state p {
+        font-size: 18px;
+        color: var(--text-secondary);
+        margin-bottom: 48px;
+        position: relative;
+        z-index: 1;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+    }
+
+    .typing-dots {
+        display: flex;
+        gap: 8px;
+        padding: 4px 0;
+    }
+
+    .typing-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+        animation: typing 1.4s infinite;
+        opacity: 0.6;
+        box-shadow: 0 0 10px rgba(16, 163, 127, 0.5);
+    }
+
+    .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+        0%, 60%, 100% {
+            opacity: 0.4;
+            transform: translateY(0) scale(1);
+        }
+        30% {
+            opacity: 1;
+            transform: translateY(-6px) scale(1.1);
+        }
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        backdrop-filter: blur(8px);
+        animation: fadeIn 0.2s ease;
+    }
+
+    .modal-overlay.required {
+        pointer-events: auto;
+    }
+
+    .app-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .app-container.hidden {
+        display: none !important;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal {
+        background: linear-gradient(180deg, var(--bg-sidebar) 0%, #1a1b1e 100%);
+        border-radius: 16px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(16, 163, 127, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .modal::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-hover), var(--accent));
+        border-radius: 16px 16px 0 0;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .info-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        border-left: 3px solid var(--accent);
+    }
+
+    .info-section h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+
+    .info-section p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 8px;
+    }
+
+    .api-key-input-group {
+        margin-top: 24px;
+    }
+
+    .api-key-input-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .api-key-input {
+        width: 100%;
+        padding: 12px;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        margin-bottom: 12px;
+    }
+
+    .api-key-input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+        color: white;
+        box-shadow: 0 4px 16px rgba(16, 163, 127, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: linear-gradient(135deg, var(--accent-hover) 0%, #0fa575 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(16, 163, 127, 0.4);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.15) 100%);
+        border-radius: 5px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        transition: all 0.3s;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, rgba(16, 163, 127, 0.4) 0%, rgba(16, 163, 127, 0.3) 100%);
+        background-clip: padding-box;
+    }
+</style>
+</head>
+<body data-theme="dark">
+    
+    <div class="app-container" id="appContainer" style="display: flex;">
+    <button class="theme-toggle" id="themeToggle" title="Toggle Dark Mode">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+    </button>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <button class="new-chat-btn" onclick="startNewChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            New chat
+        </button>
+    </div>
+    <div class="conversations" id="conversations"></div>
+    <div class="sidebar-footer">
+        <button class="sidebar-footer-btn" onclick="clearChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Clear conversations
+        </button>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="messages-container" id="messagesContainer">
+        <div class="empty-state" id="emptyState">
+            <h1>CodeChain</h1>
+            <p>Your AI-powered code generation assistant<br>Ready to transform your ideas into production-ready code</p>
+        </div>
+    </div>
+
+    <div class="mode-selector">
+        <div class="mode-selector-wrapper">
+            <span class="mode-selector-label">Mode:</span>
+            <div class="mode-buttons">
+                <button class="mode-btn active" data-mode="fast" onclick="selectMode('fast')">⚡ Fast</button>
+                <button class="mode-btn" data-mode="advance" onclick="selectMode('advance')">🚀 Advance</button>
+                <button class="mode-btn" data-mode="full power" onclick="selectMode('full power')">💪 Full Power</button>
+                <button class="mode-btn" data-mode="optimized" onclick="selectMode('optimized')">✨ Optimized</button>
+                <button class="mode-btn" data-mode="aggressive" onclick="selectMode('aggressive')">🔥 Aggressive</button>
+                <button class="mode-btn" data-mode="balanced" onclick="selectMode('balanced')">⚖️ Balanced</button>
+                <button class="mode-btn" data-mode="strongest" onclick="selectMode('strongest')">💎 Strongest</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-container">
+        <div class="input-wrapper">
+            <div class="input-field">
+                <textarea 
+                    id="messageInput" 
+                    rows="1" 
+                    placeholder="Message CodeChain..."
+                    autofocus
+                ></textarea>
+                <button class="send-button" id="sendButton" onclick="sendMessage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="apiKeyModal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>🔑 Get API Key from Google AI Studio</h2>
+            <span style="color: var(--text-secondary); font-size: 14px;">(Required)</span>
+        </div>
+        <div class="modal-body">
+            <div class="info-section">
+                <h3>Why do we need your API key?</h3>
+                <p><strong>🔒 Privacy & Control:</strong> Your API key stays with you. We never store or share it with third parties.</p>
+                <p><strong>💰 Cost Management:</strong> You have full control over your API usage and costs through Google Cloud Console.</p>
+                <p><strong>⚡ Direct Access:</strong> Your requests go directly to Google's AI services, ensuring fast and reliable responses.</p>
+                <p><strong>🎁 Free Tier Available:</strong> Google AI Studio offers generous free tier limits for testing and development.</p>
+            </div>
+
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px;">Steps to get your API Key:</h3>
+            <ol style="list-style: none; padding: 0; margin: 0;">
+                <li style="display: flex; gap: 12px; margin-bottom: 16px; padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+                    <div style="width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0;">1</div>
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Go to Google AI Studio</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+                            Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="color: var(--accent); text-decoration: none;">https://aistudio.google.com/app/apikey</a>
+                        </p>
+                    </div>
+                </li>
+                <li style="display: flex; gap: 12px; margin-bottom: 16px; padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+                    <div style="width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0;">2</div>
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Sign in with your Google account</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0;">Use your Google account to access AI Studio</p>
+                    </div>
+                </li>
+                <li style="display: flex; gap: 12px; margin-bottom: 16px; padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+                    <div style="width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0;">3</div>
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Create a new API key</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0;">Click "Create API Key" and select "Create API key in new project" or choose an existing project</p>
+                    </div>
+                </li>
+                <li style="display: flex; gap: 12px; margin-bottom: 16px; padding: 12px; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+                    <div style="width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0;">4</div>
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Copy your API key</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0;">Copy the generated API key (it starts with "AIza...") and paste it in the field below</p>
+                    </div>
+                </li>
+            </ol>
+
+            <div class="api-key-input-group">
+                <label for="apiKeyInput">Your Google AI Studio API Key:</label>
+                <input 
+                    type="text" 
+                    id="apiKeyInput" 
+                    class="api-key-input" 
+                    placeholder="AIzaSy..."
+                    autocomplete="off"
+                    onkeydown="if(event.key === 'Enter') saveApiKey()"
+                />
+                <div class="modal-actions">
+                    <button class="btn btn-primary" onclick="saveApiKey()">
+                        Save & Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const body = document.body;
+
+const savedTheme = localStorage.getItem('theme') || 'dark';
+body.setAttribute('data-theme', savedTheme);
+updateThemeIcon(savedTheme);
+
+themeToggle.addEventListener('click', () => {
+    const currentTheme = body.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    body.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon(newTheme);
+});
+
+function updateThemeIcon(theme) {
+    if (theme === 'dark') {
+        themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    } else {
+        themeIcon.innerHTML = '<path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
+    }
+}
+
+const messagesContainer = document.getElementById('messagesContainer');
+let messageInput = null;
+let sendButton = null;
+const emptyState = document.getElementById('emptyState');
+const conversationsDiv = document.getElementById('conversations');
+
+let conversationHistory = [];
+let currentConversationId = null;
+let currentMode = "fast";
+
+function loadConversations() {
+    const saved = localStorage.getItem('chatgpt_conversations');
+    if (saved) {
+        conversationHistory = JSON.parse(saved);
+        renderConversations();
+    }
+}
+
+function saveConversations() {
+    localStorage.setItem('chatgpt_conversations', JSON.stringify(conversationHistory));
+}
+
+function renderConversations() {
+    conversationsDiv.innerHTML = '';
+    conversationHistory.forEach((conv, index) => {
+        const item = document.createElement('div');
+        item.className = 'conversation-item';
+        if (currentConversationId === conv.id) {
+            item.classList.add('active');
+        }
+        item.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${conv.title || 'New Chat'}
+            </span>
+        `;
+        item.onclick = () => loadConversation(conv.id);
+        conversationsDiv.appendChild(item);
+    });
+}
+
+function startNewChat() {
+    currentConversationId = null;
+    messagesContainer.innerHTML = '<div class="empty-state" id="emptyState"><h1>CodeChain</h1><p>Your AI-powered code generation assistant<br>Ready to transform your ideas into production-ready code</p></div>';
+    if (messageInput) {
+        messageInput.value = '';
+    }
+    renderConversations();
+}
+
+function loadConversation(id) {
+    const conv = conversationHistory.find(c => c.id === id);
+    if (!conv) return;
+    
+    currentConversationId = id;
+    messagesContainer.innerHTML = '';
+    conv.messages.forEach(msg => {
+        let isCode = msg.isCode || false;
+        if (!isCode && msg.text) {
+            const text = msg.text.trim();
+            const codeIndicators = [
+                text.includes('def ') || text.includes('class ') || text.includes('import '),
+                text.includes('if __name__') || text.includes('return ') || text.includes('print('),
+                (text.split('\n').length > 5 && text.includes('    ')) || text.startsWith('#')
+            ];
+            const codeScore = codeIndicators.filter(Boolean).length;
+            isCode = codeScore >= 2 || (text.length > 200 && codeIndicators[0]);
+        }
+        addMessageToUI(msg.text, msg.role, isCode);
+    });
+    
+    if (window.Prism) {
+        Prism.highlightAll();
+    }
+    
+    renderConversations();
+}
+
+function clearChat() {
+    if (confirm('Are you sure you want to clear all conversations?')) {
+        conversationHistory = [];
+        currentConversationId = null;
+        saveConversations();
+        startNewChat();
+    }
+}
+
+function addMessageToUI(text, role = 'assistant', isCode = false) {
+    if (emptyState && emptyState.parentNode) {
+        emptyState.remove();
+    }
+
+    const messageGroup = document.createElement('div');
+    messageGroup.className = `message-group ${role}`;
+    
+    const avatar = document.createElement('div');
+    avatar.className = `avatar ${role}`;
+    if (role === 'user') {
+        avatar.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+    } else {
+        avatar.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>';
+    }
+
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    
+    if (isCode) {
+        const codeWrapper = document.createElement('div');
+        codeWrapper.className = 'code-block-wrapper';
+        
+        const codeHeader = document.createElement('div');
+        codeHeader.className = 'code-block-header';
+        codeHeader.innerHTML = `
+            <span class="code-block-label">Python</span>
+            <button class="copy-code-btn" onclick="copyCode(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                Copy
+            </button>
+        `;
+        
+        const pre = document.createElement('pre');
+        const code = document.createElement('code');
+        code.className = 'language-python';
+        code.textContent = text;
+        pre.appendChild(code);
+        
+        codeWrapper.appendChild(codeHeader);
+        codeWrapper.appendChild(pre);
+        messageContent.appendChild(codeWrapper);
+    } else {
+        let formatted = formatMessage(text);
+        messageContent.innerHTML = formatted;
+    }
+    
+    messageGroup.appendChild(avatar);
+    messageGroup.appendChild(messageContent);
+    messagesContainer.appendChild(messageGroup);
+    
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    if (isCode && window.Prism) {
+        Prism.highlightAll();
+    }
+}
+
+function formatMessage(text) {
+    let formatted = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+        return `<pre><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`;
+    });
+    formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+    formatted = formatted.replace(/\n/g, '<br>');
+    return `<p>${formatted}</p>`;
+}
+
+function copyCode(btn) {
+    const codeBlock = btn.closest('.code-block-wrapper').querySelector('code');
+    const text = codeBlock.textContent;
+    
+    navigator.clipboard.writeText(text).then(() => {
+        btn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Copied!
+        `;
+        setTimeout(() => {
+            btn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                Copy
+            `;
+        }, 2000);
+    });
+}
+
+function showTypingIndicator() {
+    removeTypingIndicator();
+    
+    const messageGroup = document.createElement('div');
+    messageGroup.className = 'message-group assistant';
+    messageGroup.id = 'typing-indicator-group';
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar assistant';
+    avatar.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>';
+    
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    messageContent.innerHTML = `
+        <div class="typing-indicator">
+            <span style="color: var(--text-secondary); font-size: 14px; font-style: italic;">Analyzing & generating...</span>
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    `;
+    
+    messageGroup.appendChild(avatar);
+    messageGroup.appendChild(messageContent);
+    messagesContainer.appendChild(messageGroup);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    return messageGroup;
+}
+
+function removeTypingIndicator() {
+    const typingIndicatorGroup = document.getElementById('typing-indicator-group');
+    if (typingIndicatorGroup) {
+        typingIndicatorGroup.remove();
+    }
+}
+
+function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+}
+
+let inputListenersSetup = false;
+
+function setupInputListeners() {
+    if (!messageInput || inputListenersSetup) return;
+    
+    messageInput.addEventListener('input', () => autoResize(messageInput));
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            // Check API key before allowing send
+            const apiKey = sessionStorage.getItem('google_api_key');
+            if (!apiKey) {
+                showApiKeyModal();
+                return;
+            }
+            sendMessage();
+        }
+    });
+    
+    inputListenersSetup = true;
+}
+
+function showApiKeyModal() {
+    const modal = document.getElementById('apiKeyModal');
+    const appContainer = document.getElementById('appContainer');
+    modal.style.display = 'flex';
+    modal.classList.add('required');
+    appContainer.classList.add('hidden');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+        document.getElementById('apiKeyInput').focus();
+    }, 100);
+}
+
+function hideApiKeyModal() {
+    const modal = document.getElementById('apiKeyModal');
+    const appContainer = document.getElementById('appContainer');
+    modal.style.display = 'none';
+    modal.classList.remove('required');
+    appContainer.classList.remove('hidden');
+    document.body.style.overflow = '';
+}
+
+function saveApiKey() {
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKey = apiKeyInput.value.trim();
+    
+    if (!apiKey) {
+        alert('Please enter your API key');
+        return;
+    }
+    
+    if (!apiKey.startsWith('AIza')) {
+        if (!confirm('API key format seems invalid. Are you sure you want to continue?')) {
+            return;
+        }
+    }
+    
+    sessionStorage.setItem('google_api_key', apiKey);
+    hideApiKeyModal();
+    
+    // Initialize message input and send button if not already done
+    if (!messageInput) {
+        messageInput = document.getElementById('messageInput');
+    }
+    if (!sendButton) {
+        sendButton = document.getElementById('sendButton');
+    }
+    
+    // Enable input field and send button
+    if (messageInput) {
+        messageInput.disabled = false;
+        messageInput.placeholder = 'Message CodeChain...';
+    }
+    if (sendButton) {
+        sendButton.disabled = false;
+    }
+    
+    // Setup input listeners if not already done
+    setupInputListeners();
+    
+    // Show welcome message
+    setTimeout(() => {
+        addMessageToUI('✅ API key saved successfully! You can now use the service.', 'assistant');
+    }, 300);
+}
+
+function selectMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.mode === mode) {
+            btn.classList.add('active');
+        }
+    });
+    localStorage.setItem('selected_mode', mode);
+}
+
+function loadMode() {
+    const savedMode = localStorage.getItem('selected_mode');
+    if (savedMode) {
+        selectMode(savedMode);
+    }
+}
+
+async function sendMessage() {
+    if (!messageInput) return;
+    
+    const message = messageInput.value.trim();
+    if (!message) return;
+
+    let apiKey = sessionStorage.getItem('google_api_key');
+    if (!apiKey) {
+        // If API key is missing, show modal and hide app
+        document.getElementById('appContainer').classList.add('hidden');
+        // Disable input field and send button
+        if (messageInput) {
+            messageInput.disabled = true;
+            messageInput.placeholder = 'Please enter your API key first...';
+        }
+        if (sendButton) {
+            sendButton.disabled = true;
+        }
+        showApiKeyModal();
+        return;
+    }
+
+    addMessageToUI(message, 'user');
+    messageInput.value = '';
+    autoResize(messageInput);
+    sendButton.disabled = true;
+
+    const typingIndicator = showTypingIndicator();
+
+    if (!currentConversationId) {
+        currentConversationId = Date.now().toString();
+        conversationHistory.push({
+            id: currentConversationId,
+            title: message.substring(0, 50),
+            messages: []
+        });
+    }
+
+    const currentConv = conversationHistory.find(c => c.id === currentConversationId);
+    if (currentConv) {
+        currentConv.messages.push({ role: 'user', text: message });
+    }
+
+    try {
+        const response = await fetch("/run", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                task: message,
+                api_key: apiKey,
+                verbose: false,
+                mode: currentMode
+            })
+        });
+        
+        if (response.status === 400) {
+            const error = await response.json().catch(() => ({ detail: "API key not configured" }));
+            removeTypingIndicator();
+            addMessageToUI("❌ API Key Error: " + (error.detail || "Invalid API key. Please get a new API key."), "assistant");
+            sessionStorage.removeItem('google_api_key');
+            // Hide app and show API key modal
+            document.getElementById('appContainer').classList.add('hidden');
+            setTimeout(() => {
+                showApiKeyModal();
+            }, 1000);
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        removeTypingIndicator();
+
+        if (data.final_code) {
+            addMessageToUI("Generated code:", "assistant");
+            addMessageToUI(data.final_code, "assistant", true);
+            
+            if (currentConv) {
+                currentConv.messages.push({ role: 'assistant', text: "Generated code:" });
+                currentConv.messages.push({ role: 'assistant', text: data.final_code, isCode: true });
+            }
+        } else if (data.selected_design) {
+            const designText = data.selected_design.substring(0, 1000) + (data.selected_design.length > 1000 ? "..." : "");
+            addMessageToUI(designText, "assistant");
+            if (currentConv) {
+                currentConv.messages.push({ role: 'assistant', text: designText });
+            }
+        } else {
+            addMessageToUI("I've processed your request. Here's what I generated:", "assistant");
+            if (currentConv) {
+                currentConv.messages.push({ role: 'assistant', text: "I've processed your request. Here's what I generated:" });
+            }
+        }
+
+        saveConversations();
+        renderConversations();
+        
+    } catch (err) {
+        console.error('Error:', err);
+        removeTypingIndicator();
+        addMessageToUI("❌ Error: " + (err.message || err), "assistant");
+    } finally {
+        if (sendButton) {
+            sendButton.disabled = false;
+        }
+        if (messageInput) {
+            messageInput.focus();
+        }
+    }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+    // Initialize message input and send button
+    messageInput = document.getElementById('messageInput');
+    sendButton = document.getElementById('sendButton');
+    
+    // Check API key first - this is required before anything else
+    let apiKey = sessionStorage.getItem('google_api_key');
+    
+    if (!apiKey) {
+        // Hide app and show API key modal
+        const appContainer = document.getElementById('appContainer');
+        const modal = document.getElementById('apiKeyModal');
+        
+        if (appContainer) {
+            appContainer.classList.add('hidden');
+        }
+        
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('required');
+        }
+        
+        // Disable input field and send button until API key is provided
+        if (messageInput) {
+            messageInput.disabled = true;
+            messageInput.placeholder = 'Please enter your API key first...';
+        }
+        if (sendButton) {
+            sendButton.disabled = true;
+        }
+        
+        // Setup input listeners (but they will check API key before sending)
+        setupInputListeners();
+        
+        return; // Don't load anything else until API key is provided
+    }
+    
+    // If API key exists, show the app and hide modal
+    const appContainer = document.getElementById('appContainer');
+    const modal = document.getElementById('apiKeyModal');
+    
+    if (appContainer) {
+        appContainer.classList.remove('hidden');
+    }
+    
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('required');
+    }
+    
+    // Enable input field and send button
+    if (messageInput) {
+        messageInput.disabled = false;
+        messageInput.placeholder = 'Message CodeChain...';
+    }
+    if (sendButton) {
+        sendButton.disabled = false;
+    }
+    
+    // Setup input listeners
+    setupInputListeners();
+    
+    // Now load the rest of the app
+    loadConversations();
+    loadMode();
+    
+    try {
+        const response = await fetch('/health');
+        if (!response.ok) {
+            console.warn('Backend health check failed');
+        }
+    } catch (error) {
+        console.error('Backend connection failed:', error);
+        // Only show error if app is visible
+        if (appContainer && !appContainer.classList.contains('hidden')) {
+            addMessageToUI('⚠️ Backend server is not running. Please start the server with: python api.py', 'assistant');
+        }
+    }
+});
+
+// Clear API key when session ends (tab closed or page unloaded)
+window.addEventListener('beforeunload', () => {
+    sessionStorage.removeItem('google_api_key');
+});
+
+// Also clear on page visibility change (when tab becomes hidden)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Optional: clear when tab becomes hidden
+        // sessionStorage.removeItem('google_api_key');
+    }
+});
+</script>
+
+</body>
+</html>
