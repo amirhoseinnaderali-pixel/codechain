@@ -1463,7 +1463,9 @@ async function sendMessage() {
     }
 
     try {
-        const response = await fetch("/run", {
+        // Use relative path for API - works in both local and production
+        const apiUrl = "/run";
+        const response = await fetch(apiUrl, {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
@@ -1497,6 +1499,7 @@ async function sendMessage() {
         const data = await response.json();
         removeTypingIndicator();
 
+        // Handle response data
         if (data.final_code) {
             addMessageToUI("Generated code:", "assistant");
             addMessageToUI(data.final_code, "assistant", true);
@@ -1510,6 +1513,11 @@ async function sendMessage() {
             addMessageToUI(designText, "assistant");
             if (currentConv) {
                 currentConv.messages.push({ role: 'assistant', text: designText });
+            }
+        } else if (data.documentation) {
+            addMessageToUI("Documentation:\n" + data.documentation, "assistant");
+            if (currentConv) {
+                currentConv.messages.push({ role: 'assistant', text: "Documentation:\n" + data.documentation });
             }
         } else {
             addMessageToUI("I've processed your request. Here's what I generated:", "assistant");
@@ -1601,16 +1609,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     loadConversations();
     loadMode();
     
+    // Health check - verify backend is running
     try {
-        const response = await fetch('/health');
-        if (!response.ok) {
-            console.warn('Backend health check failed');
+        const healthResponse = await fetch('/health');
+        if (healthResponse.ok) {
+            const healthData = await healthResponse.json();
+            console.log('✅ Backend is healthy:', healthData);
+        } else {
+            console.warn('⚠️ Backend health check failed');
         }
     } catch (error) {
-        console.error('Backend connection failed:', error);
-        // Only show error if app is visible
-        if (appContainer && !appContainer.classList.contains('hidden')) {
-            addMessageToUI('⚠️ Backend server is not running. Please start the server with: python api.py', 'assistant');
+        console.error('❌ Backend connection failed:', error);
+        // Only show error if app is visible and API key is set
+        if (appContainer && !appContainer.classList.contains('hidden') && apiKey) {
+            addMessageToUI('⚠️ Backend server connection failed. Please check if the server is running.', 'assistant');
         }
     }
 });
