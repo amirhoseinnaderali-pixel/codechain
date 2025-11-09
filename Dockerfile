@@ -16,5 +16,5 @@ RUN chmod +x start.sh start.py
 EXPOSE 8000
 
 # Run the application using Python script (more reliable)
-CMD ["python", "start.py"]
+CMD ["python", "api.py"]
 
