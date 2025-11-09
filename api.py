@@ -107,20 +107,31 @@ async def run_options():
     """Handle CORS preflight"""
     return {"status": "ok"}
 
+# Get base directory (works in both local and Docker)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+
 # Serve index.html at root
 @app.get("/")
 async def root_index():
-    index_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    index_path = os.path.join(STATIC_DIR, "index.html")
     if not os.path.exists(index_path):
+        # Fallback: try root directory
+        fallback_path = os.path.join(BASE_DIR, "index.html")
+        if os.path.exists(fallback_path):
+            return FileResponse(fallback_path)
         raise HTTPException(status_code=404, detail="index.html not found")
     return FileResponse(index_path)
 
 # Mount static files
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    print(f"✅ Static directory mounted: {STATIC_DIR}")
 else:
-    print(f"Warning: Static directory not found: {static_dir}")
+    print(f"⚠️ Warning: Static directory not found: {STATIC_DIR}")
+    # Try to list what's in BASE_DIR
+    if os.path.exists(BASE_DIR):
+        print(f"📁 Contents of {BASE_DIR}: {os.listdir(BASE_DIR)}")
 
 if __name__ == "__main__":
     import uvicorn
@@ -131,5 +142,5 @@ if __name__ == "__main__":
     print("=" * 60)
     print("📝 API key should be provided in requests")
     print("=" * 60)
+    # reload=False for production (Railway)
     uvicorn.run("api:app", host="0.0.0.0", port=port, reload=False)
-    
