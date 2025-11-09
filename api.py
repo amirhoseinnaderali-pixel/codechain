@@ -131,5 +131,5 @@ if __name__ == "__main__":
     print("=" * 60)
     print("📝 API key should be provided in requests")
     print("=" * 60)
-    uvicorn api:app --host 0.0.0.0 --port $PORT
+    uvicorn.run("api:app", host="0.0.0.0", port=port, reload=False)
     
