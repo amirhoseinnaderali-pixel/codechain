@@ -534,14 +534,20 @@ HINT:
                     "step": i,
                     "model": model,
                     "output": current_output,
-                    "score": evaluation["score"]+i,
+                    "score": evaluation["score"],
                     "success": True
                 }
                 all_responses.append(scored_response)
                 
-                current_output,score,model=find_best_response(all_responses)
-                print(f"best  score: {score}"+"step number is "+str(i))
-                print(f"best  output: {model}")
+                if select_best_from_all:
+                    current_output, score, best_model = find_best_response(all_responses)
+                    best_selections.append({
+                        "step": i,
+                        "selected_model": best_model,
+                        "objective": "llm_quality_score",
+                        "score": score
+                    })
+                    print(f"best score: {score}; step: {i}; model: {best_model}")
                 
                 
 
@@ -673,8 +679,11 @@ def find_best_response(all_responses):
 
 
 if __name__ == "__main__":
-    print(super_code_generator("write a code to generate a random number", "AIzaSyAtVovqpNtYpy30EDTr9nxlkdHQxbntq4k", "fast"))  
-
+    import os
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise SystemExit("Set GOOGLE_API_KEY before running the demo.")
+    print(super_code_generator("write a code to generate a random number", api_key, "fast"))  
 
 
 
